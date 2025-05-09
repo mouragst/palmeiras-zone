@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long> {
-    List<Match> findByIsLive(boolean isLive);
+    List<Match> findByIsLive(boolean isLive);   
 }
