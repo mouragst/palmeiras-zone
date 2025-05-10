@@ -2,25 +2,30 @@ package com.mouragst.palmeirasfanzone.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import com.mouragst.palmeirasfanzone.repository.CompetitionRepository;
-import com.mouragst.palmeirasfanzone.repository.TeamRepository;
 import org.springframework.transaction.annotation.Transactional;
-import com.mouragst.palmeirasfanzone.model.Match;
-import com.mouragst.palmeirasfanzone.model.Competition;
-import com.mouragst.palmeirasfanzone.model.Standing;
-import com.mouragst.palmeirasfanzone.model.Team;
-import com.mouragst.palmeirasfanzone.repository.MatchRepository;
-import com.mouragst.palmeirasfanzone.repository.StandingRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mouragst.palmeirasfanzone.model.Match;
+import com.mouragst.palmeirasfanzone.model.Season;
+import com.mouragst.palmeirasfanzone.model.Squad;
+import com.mouragst.palmeirasfanzone.model.Competition;
+import com.mouragst.palmeirasfanzone.model.Standing;
+import com.mouragst.palmeirasfanzone.model.Team;
+import com.mouragst.palmeirasfanzone.repository.CompetitionRepository;
+import com.mouragst.palmeirasfanzone.repository.TeamRepository;
+import com.mouragst.palmeirasfanzone.repository.SeasonRepository;
+import com.mouragst.palmeirasfanzone.repository.SquadRepository;
+import com.mouragst.palmeirasfanzone.repository.MatchRepository;
+import com.mouragst.palmeirasfanzone.repository.StandingRepository;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.List;
 
@@ -43,16 +48,21 @@ public class FootballDataService {
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
     private final ObjectMapper objectMapper;
+    private final SquadRepository squadRepository;
+    private final SeasonRepository seasonRepository;
 
     public FootballDataService(RestTemplate restTemplate, CompetitionRepository competitionRepository,
                             TeamRepository teamRepository, MatchRepository matchRepository,
-                            StandingRepository standingRepository, ObjectMapper objectMapper) {
+                            StandingRepository standingRepository, ObjectMapper objectMapper, 
+                            SquadRepository squadRepository, SeasonRepository seasonRepository) {
         this.restTemplate = restTemplate;
         this.competitionRepository = competitionRepository;
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
         this.standingRepository = standingRepository;
         this.objectMapper = objectMapper;
+        this.squadRepository = squadRepository;
+        this.seasonRepository = seasonRepository;
     }
 
     public String getStandings(String code) {
@@ -75,6 +85,45 @@ public class FootballDataService {
         ResponseEntity<String> response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, String.class);
 
         return response.getBody();
+    }
+
+    public String getTeamData() {
+        String url = apiUrl + "/teams/" + teamId;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", apiKey);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, String.class);
+
+        return response.getBody();
+    }
+
+    @Transactional
+    public void fetchAndSaveSquad() throws Exception {
+        String response = getTeamData();
+        JsonNode root = objectMapper.readTree(response);
+
+        if (root == null || root.path("squad").isEmpty()) {
+            throw new Exception("No squad found in the response.");
+        }
+
+        JsonNode coachNode = root.path("coach");
+        for (JsonNode coach : coachNode) {
+            Long coachId = coach.path("id").asLong();
+            squadRepository.findById(coachId).orElseGet(() -> {
+                Squad newSquad = buildSquad(coach);
+                return squadRepository.save(newSquad);
+            });
+        }
+
+        JsonNode squadNodes = root.path("squad");
+        for (JsonNode playerNode : squadNodes) {
+            Long playerId = playerNode.path("id").asLong();
+            squadRepository.findById(playerId).orElseGet(() -> {
+                Squad newSquad = buildSquad(playerNode);
+                return squadRepository.save(newSquad);
+            });
+        }
     }
 
     @Transactional
@@ -130,6 +179,16 @@ public class FootballDataService {
                     return competitionRepository.save(newCompetition);
                 });
             }
+
+            JsonNode seasonNode = matchNode.path("season");
+            Season season = null;
+            Long seasonId = seasonNode.path("id").asLong();
+            if (seasonNode != null) {
+                season = seasonRepository.findById(seasonId).orElseGet(() -> {
+                    Season newSeason = buildSeason(seasonNode);
+                    return seasonRepository.save(newSeason);
+                });
+            }
             
             JsonNode awayTeamNode = matchNode.path("awayTeam");
             Long awayTeamId = awayTeamNode.path("id").asLong();
@@ -145,9 +204,32 @@ public class FootballDataService {
                 return teamRepository.save(team);
             });
 
-            Match match = buildMatch(matchNode, homeTeam, awayTeam, competition);
+            Match match = buildMatch(matchNode, homeTeam, awayTeam, competition, season);
             matchRepository.save(match);
         }
+    }
+
+    private Squad buildSquad(JsonNode playerNode) {
+        Squad squad = new Squad();
+        squad.setId(playerNode.path("id").asLong());
+        squad.setName(playerNode.path("name").asText());
+        squad.setPosition(playerNode.path("position").asText());
+        squad.setNationality(playerNode.path("nationality").asText());
+
+        String dateOfBirth = playerNode.path("dateOfBirth").asText();
+        if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
+            try {
+                squad.setDateOfBirth(Date.from(ZonedDateTime
+                    .parse(dateOfBirth, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                    .toInstant()));
+            } catch (Exception e) {
+                squad.setDateOfBirth(null);
+            }
+        } else {
+            squad.setDateOfBirth(null);
+        }
+
+        return squad;
     }
 
     private Standing buildStanding(JsonNode teamNode, String code, Team team) {
@@ -187,7 +269,16 @@ public class FootballDataService {
         return team;
     }
 
-    private Match buildMatch(JsonNode matchNode, Team homeTeam, Team awayTeam, Competition competition) {
+    private Season buildSeason(JsonNode seasonNode) {
+        Season season = new Season();
+        season.setId(seasonNode.path("id").asLong());
+        season.setStartDate(seasonNode.path("startDate").asText());
+        season.setEndDate(seasonNode.path("endDate").asText());
+        season.setWinner(seasonNode.path("winner").asText());
+        return season;
+    }
+
+    private Match buildMatch(JsonNode matchNode, Team homeTeam, Team awayTeam, Competition competition, Season season) {
         Match match = new Match();
         match.setId(matchNode.path("id").asLong());
         match.setMatchDate(ZonedDateTime.
@@ -197,11 +288,12 @@ public class FootballDataService {
         match.setCompetition(competition);
         match.setHomeTeam(homeTeam);
         match.setAwayTeam(awayTeam);
+        match.setSeason(season);
+        match.setStatus(matchNode.path("status").asText());
         if ("FINISHED".equals(match.getStatus())) {
             match.setHomeScore(matchNode.path("score").path("fullTime").path("home").asInt());
             match.setAwayScore(matchNode.path("score").path("fullTime").path("away").asInt());
         }
-        match.setStatus(matchNode.path("status").asText());
         return match;
     }
 }

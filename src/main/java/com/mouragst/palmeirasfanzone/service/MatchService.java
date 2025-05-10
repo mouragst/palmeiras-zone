@@ -19,15 +19,15 @@ public class MatchService {
         return matchRepository.findAll();
     }
 
+    public Match getLastPlayedMatch() {
+        return matchRepository.findLastMatchPlayed();
+    }
+
     public List<Match> getLiveMatches() {
         return matchRepository.findByIsLive(true);
     }
 
     public List<Match> getNotLiveMatches() {
         return matchRepository.findByIsLive(false);
-    }
-
-    public Match saveMatch(Match match) {
-        return matchRepository.save(match);
     }
 }

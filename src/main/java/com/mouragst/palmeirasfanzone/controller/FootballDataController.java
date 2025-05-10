@@ -15,6 +15,16 @@ public class FootballDataController {
         this.footballDataService = footballDataService;
     }
 
+    @GetMapping("/update-squad")
+    public String updateSquad() {
+        try {
+            footballDataService.fetchAndSaveSquad();
+            return "Squad updated successfully!";
+        } catch (Exception e) {
+            return "Error updating squad: " + e.getMessage();
+        }
+    }
+
     @GetMapping("/update-matches")
     public String updateMatches() {
         try {

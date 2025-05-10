@@ -21,13 +21,14 @@ public class MatchController {
         return matchService.getAllMatches();
     }
 
+    @GetMapping("/last")
+    public Match getLastPlayedMatch() {
+        return matchService.getLastPlayedMatch();
+    }
+
     @GetMapping("/live")
     public List<Match> getLiveMatches() {
         return matchService.getLiveMatches();
     }
 
-    @PostMapping
-    public Match saveMatch(@RequestBody Match match) {
-        return matchService.saveMatch(match);
-    }
 }

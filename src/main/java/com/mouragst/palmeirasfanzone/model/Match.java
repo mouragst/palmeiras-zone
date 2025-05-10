@@ -29,7 +29,10 @@ public class Match {
     @Column(nullable = false)
     private String status;
 
-    private Integer season;
+    @ManyToOne
+    @JoinColumn(name = "season_id", nullable = false)
+    private Season season;
+
     private Integer homeScore;
     private Integer awayScore;
     private boolean isLive;
