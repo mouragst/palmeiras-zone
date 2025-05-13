@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class Standing {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
@@ -46,4 +47,11 @@ public class Standing {
 
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
+
+    @Column(nullable = true)
+    private String groupName;
+
+    public Standing() {
+        this.lastUpdated = LocalDateTime.now();
+    }
 }

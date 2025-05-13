@@ -44,4 +44,29 @@ public class FootballDataController {
             return "Error updating standings: " + e.getMessage();
         }
     }
+
+    @GetMapping("/update-all")
+    public String updateEverything() {
+        StringBuilder result = new StringBuilder();
+
+        try {
+            result.append(updateSquad()).append("\n");
+        } catch (Exception e) {
+            result.append("Error updating squad: ").append(e.getMessage()).append("\n");
+        }
+
+        try {
+            result.append(updateMatches()).append("\n");
+        } catch (Exception e) {
+            result.append("Error updating matches: ").append(e.getMessage()).append("\n");
+        }
+
+        try {
+            result.append(updateStandings()).append("\n");
+        } catch (Exception e) {
+            result.append("Error updating standings: ").append(e.getMessage()).append("\n");
+        }
+
+        return result.toString();
+    }
 }

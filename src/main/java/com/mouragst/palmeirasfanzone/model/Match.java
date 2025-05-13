@@ -37,8 +37,12 @@ public class Match {
     private Integer awayScore;
     private boolean isLive;
 
+    @Column(nullable = false)
+    private LocalDateTime lastUpdated;
+
     public Match() {
         this.isLive = false;
+        this.lastUpdated = LocalDateTime.now();
     }
 
 }

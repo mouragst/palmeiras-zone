@@ -4,9 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.ZoneId;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -29,16 +27,12 @@ public class Squad {
     private String nationality;
 
     @Column(name = "dateOfBirth")
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
+
+    @Column(nullable = false)
+    private LocalDateTime lastUpdated;
 
     public Squad() {
-        if (this.dateOfBirth != null) {
-            LocalDate birthDate = this.dateOfBirth.toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            this.age = Period.between(birthDate, LocalDate.now()).getYears();
-        } else {
-            this.age = null;
-        }
+        this.lastUpdated = LocalDateTime.now();
     }
 }

@@ -22,10 +22,10 @@ import com.mouragst.palmeirasfanzone.repository.SquadRepository;
 import com.mouragst.palmeirasfanzone.repository.MatchRepository;
 import com.mouragst.palmeirasfanzone.repository.StandingRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.List;
 
@@ -108,10 +108,10 @@ public class FootballDataService {
         }
 
         JsonNode coachNode = root.path("coach");
-        for (JsonNode coach : coachNode) {
-            Long coachId = coach.path("id").asLong();
+        if (!coachNode.isMissingNode()) {
+            Long coachId = coachNode.path("id").asLong();
             squadRepository.findById(coachId).orElseGet(() -> {
-                Squad newSquad = buildSquad(coach);
+                Squad newSquad = buildSquad(coachNode);
                 return squadRepository.save(newSquad);
             });
         }
@@ -129,10 +129,10 @@ public class FootballDataService {
     @Transactional
     public void fetchAndSaveStandings() throws Exception {
         List<String> codes = competitionRepository.findAllBy()
-                                          .stream()
-                                          .map(Competition::getCode)
-                                          .collect(Collectors.toList());
-        
+                                    .stream()
+                                    .map(Competition::getCode)
+                                    .collect(Collectors.toList());
+
         for (String code : codes) {
             String response = getStandings(code);
             JsonNode root = objectMapper.readTree(response);
@@ -143,16 +143,18 @@ public class FootballDataService {
 
             JsonNode standings = root.path("standings");
             for (JsonNode standingNode : standings) {
+                String group = standingNode.has("group") ? standingNode.path("group").asText() : null;
+
                 JsonNode tableNode = standingNode.path("table");
                 for (JsonNode teamNode : tableNode) {
                     Long teamId = teamNode.path("team").path("id").asLong();
+
                     Team team = teamRepository.findById(teamId).orElseGet(() -> {
-                        Team newTeam = buildTeam(teamNode);
+                        Team newTeam = buildTeam(teamNode.path("team"));
                         return teamRepository.save(newTeam);
                     });
 
-                    Standing standing = buildStanding(teamNode, code, team);
-                    standingRepository.save(standing);
+                    saveOrUpdateStanding(teamNode, code, team, group);
                 }
             }
         }
@@ -213,20 +215,32 @@ public class FootballDataService {
         Squad squad = new Squad();
         squad.setId(playerNode.path("id").asLong());
         squad.setName(playerNode.path("name").asText());
-        squad.setPosition(playerNode.path("position").asText());
+        
+        if (playerNode.has("contract")) {
+            squad.setPosition("Coach");
+        } else {
+            squad.setPosition(playerNode.path("position").asText());
+        }
+        
         squad.setNationality(playerNode.path("nationality").asText());
 
         String dateOfBirth = playerNode.path("dateOfBirth").asText();
         if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
             try {
-                squad.setDateOfBirth(Date.from(ZonedDateTime
-                    .parse(dateOfBirth, DateTimeFormatter.ISO_ZONED_DATE_TIME)
-                    .toInstant()));
+                LocalDate localDate = LocalDate.parse(dateOfBirth, DateTimeFormatter.ISO_LOCAL_DATE);
+                squad.setDateOfBirth(localDate);
+                int age = LocalDate.now().getYear() - localDate.getYear();
+                if (LocalDate.now().isBefore(localDate.plusYears(age))) {
+                    age--;
+                }
+                squad.setAge(age);
             } catch (Exception e) {
                 squad.setDateOfBirth(null);
+                squad.setAge(0);
             }
         } else {
             squad.setDateOfBirth(null);
+            squad.setAge(0);
         }
 
         return squad;
@@ -234,7 +248,6 @@ public class FootballDataService {
 
     private Standing buildStanding(JsonNode teamNode, String code, Team team) {
         Standing standing = new Standing();
-        standing.setId(teamNode.path("team").path("id").asLong());
         standing.setCompetition(competitionRepository.findByCode(code));
         standing.setTeam(team);
         standing.setPosition(teamNode.path("position").asInt());
@@ -295,5 +308,31 @@ public class FootballDataService {
             match.setAwayScore(matchNode.path("score").path("fullTime").path("away").asInt());
         }
         return match;
+    }
+
+    private void saveOrUpdateStanding(JsonNode teamNode, String code, Team team, String group) {
+        Standing existingStanding = standingRepository.findByTeamAndCompetitionCode(team, code);
+
+        if (existingStanding != null) {
+            existingStanding.setPosition(teamNode.path("position").asInt());
+            existingStanding.setPoints(teamNode.path("points").asInt());
+            existingStanding.setWins(teamNode.path("won").asInt());
+            existingStanding.setDraws(teamNode.path("draw").asInt());
+            existingStanding.setLosses(teamNode.path("lost").asInt());
+            existingStanding.setGoalsFor(teamNode.path("goalsFor").asInt());
+            existingStanding.setGoalsAgainst(teamNode.path("goalsAgainst").asInt());
+            existingStanding.setGoalDifference(teamNode.path("goalDifference").asInt());
+            existingStanding.setLastUpdated(LocalDateTime.now());
+            if (group != null) {
+                existingStanding.setGroupName(group);
+            }
+            standingRepository.save(existingStanding);
+        } else {
+            Standing newStanding = buildStanding(teamNode, code, team);
+            if (group != null) {
+                newStanding.setGroupName(group);
+            }
+            standingRepository.save(newStanding);
+        }
     }
 }

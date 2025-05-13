@@ -20,5 +20,4 @@ public class SquadController {
     public List<Squad> getSquad() {
         return squadService.getSquad();
     }
-    
 }
