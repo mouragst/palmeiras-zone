@@ -1,7 +1,8 @@
 package com.mouragst.palmeirasfanzone.service;
 
-import com.mouragst.palmeirasfanzone.model.Squad;
 import com.mouragst.palmeirasfanzone.repository.SquadRepository;
+import com.mouragst.palmeirasfanzone.dto.SquadDTO;
+import com.mouragst.palmeirasfanzone.mapper.SquadMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +16,10 @@ public class SquadService {
         this.squadRepository = squadRepository;
     }
 
-    public List<Squad> getSquad() {
-        return squadRepository.findAll();
+    public List<SquadDTO> getSquad() {
+        return squadRepository.findAll()
+                .stream()
+                .map(SquadMapper::toDTO)
+                .toList();
     }
 }

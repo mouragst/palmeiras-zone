@@ -1,7 +1,8 @@
 package com.mouragst.palmeirasfanzone.service;
 
-import com.mouragst.palmeirasfanzone.model.Standing;
 import com.mouragst.palmeirasfanzone.repository.StandingRepository;
+import com.mouragst.palmeirasfanzone.dto.StandingDTO;
+import com.mouragst.palmeirasfanzone.mapper.StandingMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +16,11 @@ public class StandingService {
         this.standingRepository = standingRepository;
     }
 
-    public List<Standing> getStandings() {
-        return standingRepository.findAndGroupByCompetitionAndPoints();
+    public List<StandingDTO> getStandings() {
+        return standingRepository.findAndGroupByCompetitionAndPoints()
+                .stream()
+                .map(StandingMapper::toDTO)
+                .toList();
     }
 
 }

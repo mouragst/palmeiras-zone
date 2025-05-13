@@ -2,9 +2,12 @@ package com.mouragst.palmeirasfanzone.service;
 
 import com.mouragst.palmeirasfanzone.model.Match;
 import com.mouragst.palmeirasfanzone.repository.MatchRepository;
+import com.mouragst.palmeirasfanzone.dto.MatchDTO;
+import com.mouragst.palmeirasfanzone.mapper.MatchMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MatchService {
@@ -15,19 +18,22 @@ public class MatchService {
         this.matchRepository = matchRepository;
     }
 
-    public List<Match> getAllMatches() {
-        return matchRepository.findAll();
+    public List<MatchDTO> getAllMatches() {
+        return matchRepository.findAll()
+                .stream()
+                .map(MatchMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public Match getLastPlayedMatch() {
-        return matchRepository.findLastMatchPlayed();
+    public MatchDTO getLastPlayedMatch() {
+        Match lastMatch = matchRepository.findLastMatchPlayed();
+        return lastMatch != null ? MatchMapper.toDTO(lastMatch) : null;
     }
 
-    public List<Match> getLiveMatches() {
-        return matchRepository.findByIsLive(true);
-    }
-
-    public List<Match> getNotLiveMatches() {
-        return matchRepository.findByIsLive(false);
+    public List<MatchDTO> getLiveMatches() {
+        return matchRepository.findByIsLive(true)
+                .stream()
+                .map(MatchMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

@@ -1,7 +1,7 @@
 package com.mouragst.palmeirasfanzone.controller;
 
-import com.mouragst.palmeirasfanzone.model.Competition;
 import com.mouragst.palmeirasfanzone.service.CompetitionService;
+import com.mouragst.palmeirasfanzone.dto.CompetitionDTO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +17,17 @@ public class CompetitionController {
     }
 
     @GetMapping
-    public List<Competition> getAllCompetitions() {
+    public List<CompetitionDTO> getAllCompetitions() {
         return competitionService.getAllCompetitions();
     }
 
     @GetMapping("/{id}")
-    public Competition getCompetitionById(@PathVariable Long id) {
+    public CompetitionDTO getCompetitionById(@PathVariable Long id) {
         return competitionService.getCompetitionById(id);
     }
 
     @GetMapping("/code/{code}")
-    public Competition getCompetitionByCode(@PathVariable String code) {
+    public CompetitionDTO getCompetitionByCode(@PathVariable String code) {
         return competitionService.getCompetitionByCode(code);
     }
 }

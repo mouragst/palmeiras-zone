@@ -1,6 +1,6 @@
 package com.mouragst.palmeirasfanzone.controller;
 
-import com.mouragst.palmeirasfanzone.model.Squad;
+import com.mouragst.palmeirasfanzone.dto.SquadDTO;
 import com.mouragst.palmeirasfanzone.service.SquadService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ public class SquadController {
     }
 
     @GetMapping
-    public List<Squad> getSquad() {
+    public List<SquadDTO> getSquad() {
         return squadService.getSquad();
     }
 }

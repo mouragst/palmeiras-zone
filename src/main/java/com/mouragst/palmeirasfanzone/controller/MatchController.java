@@ -1,6 +1,6 @@
 package com.mouragst.palmeirasfanzone.controller;
 
-import com.mouragst.palmeirasfanzone.model.Match;
+import com.mouragst.palmeirasfanzone.dto.MatchDTO;
 import com.mouragst.palmeirasfanzone.service.MatchService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,18 +17,17 @@ public class MatchController {
     }
 
     @GetMapping
-    public List<Match> getAllMatches() {
+    public List<MatchDTO> getAllMatches() {
         return matchService.getAllMatches();
     }
 
     @GetMapping("/last")
-    public Match getLastPlayedMatch() {
+    public MatchDTO getLastPlayedMatch() {
         return matchService.getLastPlayedMatch();
     }
 
     @GetMapping("/live")
-    public List<Match> getLiveMatches() {
+    public List<MatchDTO> getLiveMatches() {
         return matchService.getLiveMatches();
     }
-
 }

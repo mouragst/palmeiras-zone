@@ -1,6 +1,6 @@
 package com.mouragst.palmeirasfanzone.controller;
 
-import com.mouragst.palmeirasfanzone.model.Standing;
+import com.mouragst.palmeirasfanzone.dto.StandingDTO;
 import com.mouragst.palmeirasfanzone.service.StandingService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ public class StandingController {
     }
 
     @GetMapping
-    public List<Standing> getStandings() {
+    public List<StandingDTO> getStandings() {
         return standingService.getStandings();
     }
 }
