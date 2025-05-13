@@ -1,6 +1,6 @@
 package com.mouragst.palmeirasfanzone.controller;
 
-import com.mouragst.palmeirasfanzone.model.Team;
+import com.mouragst.palmeirasfanzone.dto.TeamDTO;
 import com.mouragst.palmeirasfanzone.service.TeamService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,17 +17,17 @@ public class TeamController {
     }
 
     @GetMapping
-    public List<Team> getAllTeams() {
+    public List<TeamDTO> getAllTeams() {
         return teamService.getAllTeams();
     }
 
     @GetMapping("/{id}")
-    public Team getTeamById(@PathVariable Long id) {
+    public TeamDTO getTeamById(@PathVariable Long id) {
         return teamService.getTeamById(id);
     }
 
     @GetMapping("/code/{code}")
-    public Team getTeamByCode(@PathVariable String code) {
+    public TeamDTO getTeamByCode(@PathVariable String code) {
         return teamService.getTeamByCode(code);
     }
     
