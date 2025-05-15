@@ -17,9 +17,20 @@ public class SquadService {
     }
 
     public List<SquadDTO> getSquad() {
-        return squadRepository.findAll()
-                .stream()
-                .map(SquadMapper::toDTO)
-                .toList();
-    }
+    List<String> ordemPosicoes = List.of(
+        "Goalkeeper", "Defence", "Midfield", "Offence", "Centre-Forward", "Left Winger", "Coach"
+    );
+
+    return squadRepository.findAll()
+            .stream()
+            .map(SquadMapper::toDTO)
+            .sorted((a, b) -> {
+                int idxA = ordemPosicoes.indexOf(a.getPosition());
+                int idxB = ordemPosicoes.indexOf(b.getPosition());
+                if (idxA == -1) idxA = ordemPosicoes.size();
+                if (idxB == -1) idxB = ordemPosicoes.size();
+                return Integer.compare(idxA, idxB);
+            })
+            .toList();
+}
 }

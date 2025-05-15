@@ -21,6 +21,11 @@ public class MatchController {
         return matchService.getAllMatches();
     }
 
+    @GetMapping("/{id}")
+    public MatchDTO getMatchById(@PathVariable Long id) {
+        return matchService.getMatchById(id);
+    }
+
     @GetMapping("/last")
     public MatchDTO getLastPlayedMatch() {
         return matchService.getLastPlayedMatch();

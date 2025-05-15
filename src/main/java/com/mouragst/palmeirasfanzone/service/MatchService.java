@@ -18,6 +18,12 @@ public class MatchService {
         this.matchRepository = matchRepository;
     }
 
+    public MatchDTO getMatchById(Long id) {
+        Match match = matchRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+        return MatchMapper.toDTO(match);
+    }
+
     public List<MatchDTO> getAllMatches() {
         return matchRepository.findAll()
                 .stream()
